@@ -7,7 +7,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 //@ComponentScan("com.example.community.community.mapper")
-//@MapperScan("com.example.community.community.mapper")
+@MapperScan("com.example.community.community.mapper")
 public class CommunityApplication {
 
     public static void main(String[] args) {
