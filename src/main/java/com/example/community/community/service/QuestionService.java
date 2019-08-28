@@ -10,13 +10,17 @@ import com.example.community.community.mapper.UserMapper;
 import com.example.community.community.model.Question;
 import com.example.community.community.model.QuestionExample;
 import com.example.community.community.model.User;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.RowBounds;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestionService {//组装question和user需要用到中间层service来做
@@ -44,7 +48,9 @@ public class QuestionService {//组装question和user需要用到中间层servic
         }
         paginationDTO.setPagination(totalPage,page);
         Integer offset=size*(page-1);
-        List<Question> questions = questionMapper.selectByExampleWithRowbounds(new QuestionExample(), new RowBounds(offset, size));//只写等号右边按Ctrl+alt+v快速生成左边内容
+        QuestionExample questionExample = new QuestionExample();
+        questionExample.setOrderByClause("gmt_create desc");
+        List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample, new RowBounds(offset, size));//只写等号右边按Ctrl+alt+v快速生成左边内容
         List<QuestionDTO>questionDTOSList=new ArrayList<>();
 
         for (Question question : questions) {
@@ -54,7 +60,7 @@ public class QuestionService {//组装question和user需要用到中间层servic
             questionDTO.setUser(user);
             questionDTOSList.add(questionDTO);
         }
-        paginationDTO.setQuestions(questionDTOSList);
+        paginationDTO.setData(questionDTOSList);
 
 
         return paginationDTO;
@@ -93,7 +99,7 @@ public class QuestionService {//组装question和user需要用到中间层servic
             questionDTO.setUser(user);
             questionDTOSList.add(questionDTO);
         }
-        paginationDTO.setQuestions(questionDTOSList);
+        paginationDTO.setData(questionDTOSList);
 
 
         return paginationDTO;
@@ -140,6 +146,24 @@ public class QuestionService {//组装question和user需要用到中间层servic
         question.setId(id);
         question.setViewCount(1);
         questionExtMapper.incView(question);
+    }
+
+    public List<QuestionDTO> selectRelated(QuestionDTO queryDTO) {
+        if (StringUtils.isBlank(queryDTO.getTag())){
+            return new ArrayList<>();
+        }
+        String[] tags= StringUtils.split(queryDTO.getTag(), ",");
+        String regexpTag = Arrays.stream(tags).collect(Collectors.joining("|"));
+        Question question = new Question();
+        question.setId(queryDTO.getId());
+        question.setTag(regexpTag);
+        List<Question> questions = questionExtMapper.selectRelated(question);
+        List<QuestionDTO> questionDTOS = questions.stream().map(q -> {
+            QuestionDTO questionDTO = new QuestionDTO();
+            BeanUtils.copyProperties(q,questionDTO);
+            return questionDTO;
+        }).collect(Collectors.toList());
+        return questionDTOS;
     }
 }
 //查询question同时循环查询user并赋值给question

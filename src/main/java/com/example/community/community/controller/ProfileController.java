@@ -3,6 +3,7 @@ package com.example.community.community.controller;
 import com.example.community.community.dto.PaginationDTO;
 import com.example.community.community.mapper.UserMapper;
 import com.example.community.community.model.User;
+import com.example.community.community.service.NotificationService;
 import com.example.community.community.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,6 +20,8 @@ public class ProfileController {
     private UserMapper userMapper;
     @Autowired
     private QuestionService questionService;
+    @Autowired
+    private NotificationService notificationService;
 
     @GetMapping("/profile/{action}")// 动态的切换路径来做内容和样式的替换
     public String profile(HttpServletRequest request,
@@ -33,13 +36,17 @@ public class ProfileController {
         if ("question".equals(action)){
             model.addAttribute("section","questions");
             model.addAttribute("sectionName","我的提问");
+            PaginationDTO paginationDTO = questionService.list(user.getId(), page, size);
+            model.addAttribute("pagination",paginationDTO);
         }else if ("replies".equals(action)){
+            PaginationDTO paginationDTO=notificationService.list(user.getId(),page,size);
+            Long unreadCount=notificationService.unreadCount(user.getId());
             model.addAttribute("section","replies");
             model.addAttribute("sectionName","最新回复");
-
+            model.addAttribute("pagination",paginationDTO);
+            model.addAttribute("unreadCount",unreadCount);
         }
-        PaginationDTO paginationDTO = questionService.list(user.getId(), page, size);
-        model.addAttribute("pagination",paginationDTO);
+
         return "profile";
     }
 }

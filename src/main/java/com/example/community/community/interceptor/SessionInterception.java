@@ -3,6 +3,7 @@ package com.example.community.community.interceptor;
 import com.example.community.community.mapper.UserMapper;
 import com.example.community.community.model.User;
 import com.example.community.community.model.UserExample;
+import com.example.community.community.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -18,6 +19,8 @@ import java.util.List;
 public class SessionInterception implements HandlerInterceptor {//alt+insert重写方法   它不是spring接管的bean，所以@Autowired不工作,及不会再上下文中依赖UserMapper，所以需要加@Service
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private NotificationService notificationService;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {//程序处理之前做下面的事情
         Cookie[] cookies = request.getCookies();
@@ -30,6 +33,8 @@ public class SessionInterception implements HandlerInterceptor {//alt+insert重�
                     List<User> users = userMapper.selectByExample(userExample);
                     if (users.size()!=0){
                         request.getSession().setAttribute("user",users.get(0));
+                        Long unreadCount=notificationService.unreadCount(users.get(0).getId());
+                        request.getSession().setAttribute("unreadCount",unreadCount);
                     }
                     break;
                 }
