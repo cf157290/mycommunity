@@ -2,6 +2,7 @@ package com.example.community.community.service;
 
 import com.example.community.community.dto.PaginationDTO;
 import com.example.community.community.dto.QuestionDTO;
+import com.example.community.community.dto.QuestionQueryDTO;
 import com.example.community.community.exception.CustomizeErrorCode;
 import com.example.community.community.exception.CustomizeException;
 import com.example.community.community.mapper.QuestionExtMapper;
@@ -30,10 +31,18 @@ public class QuestionService {//组装question和user需要用到中间层servic
     private UserMapper userMapper;
     @Autowired
     private QuestionExtMapper questionExtMapper;
-    public PaginationDTO list(Integer page, Integer size) {
+    public PaginationDTO list(String search,Integer page, Integer size) {
+        if (StringUtils.isNotBlank(search)){
+            String[] tags= StringUtils.split(search, " ");
+            search = Arrays.stream(tags).collect(Collectors.joining("|"));
+        }
+
+
         PaginationDTO paginationDTO = new PaginationDTO();
         Integer totalPage;
-        Integer totalCount = (int)questionMapper.countByExample(new QuestionExample());
+        QuestionQueryDTO questionQueryDTO = new QuestionQueryDTO();
+        questionQueryDTO.setSearch(search);
+        Integer totalCount = questionExtMapper.countBySearch(questionQueryDTO);
         if(totalCount%size==0){
             totalPage=totalCount/size;
         }else {
@@ -50,7 +59,9 @@ public class QuestionService {//组装question和user需要用到中间层servic
         Integer offset=size*(page-1);
         QuestionExample questionExample = new QuestionExample();
         questionExample.setOrderByClause("gmt_create desc");
-        List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample, new RowBounds(offset, size));//只写等号右边按Ctrl+alt+v快速生成左边内容
+        questionQueryDTO.setSize(size);
+        questionQueryDTO.setPage(offset);
+        List<Question> questions = questionExtMapper.selectBySearch(questionQueryDTO);
         List<QuestionDTO>questionDTOSList=new ArrayList<>();
 
         for (Question question : questions) {

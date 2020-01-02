@@ -6,6 +6,7 @@ import com.example.community.community.mapper.UserMapper;
 import com.example.community.community.model.User;
 import com.example.community.community.provider.GithubProvider;
 import com.example.community.community.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.UUID;
 
 @Controller
+@Slf4j//lombok打日志用
 public class AuthorizeController {
     @Autowired//自动把GitHubProvider实例放入
     private GithubProvider githubProvider;
@@ -44,8 +46,8 @@ public class AuthorizeController {
         accessTokenDTO.setRedirect_uri(redirectUri);
         accessTokenDTO.setState(state);
         //githubProvider.getaccesstoken(accessTokenDTO);//ctrl+alt+v抽取变量选第二项
-        String getaccesstoken = githubProvider.getaccesstoken(accessTokenDTO);//传入字段
-        GithubUser githubUser =githubProvider.getuser(getaccesstoken);//传入token
+        String getaccesstoken = githubProvider.getAccessToken(accessTokenDTO);//传入字段
+        GithubUser githubUser =githubProvider.getUser(getaccesstoken);//传入token
         //System.out.println(user.getName());
         if(githubUser!=null/*&& githubUser.getId()!=0*/){
             User user = new User();
@@ -63,6 +65,7 @@ public class AuthorizeController {
             //redirect是一个前缀，会把地址中多余的内容去掉，重定向到这个页面，不写的话会多出操作过的一些内容
         }else{
             //登录失败重新登录
+            log.error("callback get github error,{}",githubUser);//打日志
             return "redirect:/";
         }
     }
